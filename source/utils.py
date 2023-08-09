@@ -103,7 +103,6 @@ def reshapeData(shot_data):
     #Then transpose such that it becomes (x,y,shotNum)
     return np.transpose(np.reshape(shot_data, (35,20,10,-1)), (1,0,2,3))
 
-#Returns index given x,y values
 def coordsToIndex(x, y, width):
     """Converts x, y coordinates to indexed (Increasing in left->right, down->up) coordinates 
 
@@ -115,10 +114,8 @@ def coordsToIndex(x, y, width):
     Returns:
         int : Index
     """
-#width is width in x direction
     return y*width+x
 
-#Returns x,y coordinates given index
 def indexToCoords(i, width):
     """Converts index (Increasing in left->right, down->up) coordinates to x, y coordinates
 
