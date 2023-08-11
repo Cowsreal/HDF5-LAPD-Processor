@@ -4,9 +4,10 @@ import numpy as np #Standard python package for mathy stuff (everything from cre
 import matplotlib.pyplot as plt #Python package for plotting stuff
 from matplotlib.animation import FuncAnimation
 import utils as bap
+import cupy as cp
 
 def getDigitizerData(shot_data, x, y, startFrame, duration, shotNum):
-    """Generate FFT for a certain pixel at (x,y), shot_data must be post ['signal']
+    """Generate digitizer data for a certain pixel at (x,y), shot_data must be post ['signal']
 
     Args:
         shot_data (array): 'signal' column of DF
@@ -19,10 +20,10 @@ def getDigitizerData(shot_data, x, y, startFrame, duration, shotNum):
     Returns:
         array : one dimensional digitizer data
     """
-    data = []
+    data = cp.zeros(shape = (duration+1,))
     tempData = bap.reshapeData(shot_data)
     for i in range(startFrame, startFrame+duration+1, 1):
-        data.append(tempData[x, y, shotNum, i])
+        data[i-startFrame] = tempData[x, y, shotNum, i]
     return data
 
 def getFFT(data):
@@ -34,6 +35,12 @@ def getFFT(data):
     Returns:
         array : real valued fft of input data
     """
-    return np.fft.rfft(data)
+    return cp.fft.rfft(data)
 
+def sumFFTPeak(shot_data, x, y, startFrame, duration, totalShots):
+    sumArr = cp.zeros(totalShots)
+    for i in range(0, totalShots):
+        sumArr[i] = cp.max(cp.absolute(getDigitizerData(shot_data, x, y, startFrame, duration, i)))
+    sum =  cp.sum(sumArr)
+    return sum
 

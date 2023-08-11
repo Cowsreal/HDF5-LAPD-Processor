@@ -2,6 +2,7 @@ from bapsflib import lapd #Import erik's codes
 import numpy as np #Standard python package for mathy stuff (everything from creating arrays to fourier transforms)
 import matplotlib.pyplot as plt #Python package for plotting stuff
 from matplotlib.animation import FuncAnimation
+import cupy as cp
 
 #GLOBAL VARIABLES
 
@@ -101,7 +102,7 @@ def reshapeData(shot_data):
     """
     #First reshape such that we index by (y,x,shotNum)
     #Then transpose such that it becomes (x,y,shotNum)
-    return np.transpose(np.reshape(shot_data, (35,20,10,-1)), (1,0,2,3))
+    return cp.transpose(cp.reshape(shot_data, (35,20,10,-1)), (1,0,2,3))
 
 def coordsToIndex(x, y, width):
     """Converts x, y coordinates to indexed (Increasing in left->right, down->up) coordinates 
