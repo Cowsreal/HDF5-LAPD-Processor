@@ -1,10 +1,10 @@
 
-from bapsflib import lapd #Import erik's codes
-import numpy as np #Standard python package for mathy stuff (everything from creating arrays to fourier transforms)
-import matplotlib.pyplot as plt #Python package for plotting stuff
+from bapsflib import lapd
+import numpy as np
+import cupy as cp
+import matplotlib.pyplot as plt 
 from matplotlib.animation import FuncAnimation
 import utils as bap
-import cupy as cp
 
 def getDigitizerData(shot_data, x, y, startFrame, duration, shotNum):
     """Generate digitizer data for a certain pixel at (x,y), shot_data must be post ['signal']
@@ -20,6 +20,7 @@ def getDigitizerData(shot_data, x, y, startFrame, duration, shotNum):
     Returns:
         array : one dimensional digitizer data
     """
+    
     data = cp.zeros(shape = (duration+1,))
     tempData = bap.reshapeData(shot_data)
     for i in range(startFrame, startFrame+duration+1, 1):

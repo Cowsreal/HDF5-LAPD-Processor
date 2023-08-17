@@ -1,41 +1,63 @@
-from bapsflib import lapd #Import erik's codes
-import numpy as np #Standard python package for mathy stuff (everything from creating arrays to fourier transforms)
-import matplotlib.pyplot as plt #Python package for plotting stuff
+from bapsflib import lapd
+import numpy as np
+import cupy as cp
+import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.collections import PolyCollection
 import FFT as fft
 import utils as bap
-import cupy as cp
+import pandas as pd
+import sys
 
+plt.style.use('ggplot')
 
 def main():
-    #GLOBAL VARIABLES
-
-    pos_tol = 2
-    startFrame = 5022
-    duration = 42
+    ########################
+    #   GLOBAL VARIABLES   #
+    ########################
+    
+    totalShots = 3360
     shotsPerPos = 10
+    clockRate = 1e8
+    
+    pos_tol = 1
+    startFrame = 5000
+    duration = 500
+    
     
     ############################
     #   IMPORT/LOAD THE DATA   #
     ############################
 
     #Folder Directory
-    data_file = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run65_Bdot_p35x_blockinglimiters_0degreestilt_12kV_3rdplane.hdf5'
+    file_path = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run28_iisat_p31_blockinglimiters_12kV.hdf5'
 
     #bapsflib to read file
-    hdf5_file = lapd.File(data_file)   
-
-    board = 2
-    channel = 7
-
-    shot = hdf5_file.read_data(board, channel, add_controls=[('6K Compumotor', 1)])
-    shot_data = cp.asarray(shot['signal'])
-    pos_data = shot['xyz']
-
-    #shot_data[500,:]
+    hdf5_file = lapd.File(file_path)   
 
     #hdf5_file.overview.print()
+    
+    intfer_data = hdf5_file.read_msi('Interferometer array')
+    
+    print(intfer_data.dtype)
+    #print(intfer_data['shotnum'])
+    #print(intfer_data[])
+    
+    
+    board = 1
+    channel = 1
+
+    data = hdf5_file.read_data(board, channel, add_controls=[('6K Compumotor', 1)])
+    
+    print(data.dtype)
+    shot_data = cp.asarray(data['signal'])
+    pos_data = data['xyz']
+    
+    shotsPerPos, shotsSet = bap.getShotsPerLocation(pos_data, pos_tol)
+
+    #print(f"Shots per position: {shotsPerPos}, Number of positions: {len(shotsSet)} \n")
+    print(shotsSet) #(-20, 15) -> (-6,-15)
+    bap.savePlot(shot_data, startFrame, duration, 0)
 
     #Converts ['signal'] to [x,y,shotNum,frame(time)]
     #data = bap.reshapeData(shot_data)
@@ -47,7 +69,7 @@ def main():
         bap.savePlot(shot_data)
         startFrame+=1000
     '''
-
+    
     ################################
     #   POSITIONAL DATA ANALYSIS   #
     ################################
@@ -72,16 +94,15 @@ def main():
     #   FIND FFT   #
     ################
     
-    plt.style.use('ggplot')
     
-    '''
+    '''         #3d plot
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     
     y = fft.getDigitizerData(shot_data, 0, 0, startFrame, duration, 0)
     y = fft.getFFT(y)
     n = len(y)
-    x = np.fft.fftfreq(n, d = 1e-8)
+    x = np.fft.fftfreq(n, d = 1/clockRate)
     
     for i in range(700):
         xind = bap.indexToCoords(i, 20)[0]
@@ -96,21 +117,18 @@ def main():
     plt.plot(x, y)
     plt.show()
     '''
-    '''
-    plt.figure()
-    y = fft.getDigitizerData(shot_data, 0, 0, 5000, 2000, 1).get()
-    x = np.arange(len(y))
-    plt.plot(x, y)
-    plt.show()
-    '''
     
+    
+    
+    
+    '''
     dataGPU = cp.zeros((20,35))
     for i in range(700):
         xind = bap.indexToCoords(i, 20)[0]
         yind = bap.indexToCoords(i, 20)[1]
-        val = fft.sumFFTPeak(shot_data, xind, yind, startFrame, duration, 10)
+        val = fft.sumFFTPeak(shot_data, xind, yind, startFrame, duration, shotsPerPos)
         dataGPU[xind, yind] = val
-        
+    
     dataCPU = np.transpose(dataGPU.get(),(1,0))
     
     fig, ax = plt.subplots()
@@ -120,6 +138,12 @@ def main():
     plt.ylim([0, 35])
     plt.imshow(dataCPU)
     plt.show()
+    '''
+    
+    #signal package, band pass filter around rf frequency, use the butterworth filter
+    #Langmuir Sweep, run16_sweeps_p31, how we get temperature profile
+    
+    #Look at run28_isat_p31_blocklimiters_12kV
     
 if __name__ == "__main__":
     main()
