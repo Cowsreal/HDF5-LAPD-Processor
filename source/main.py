@@ -1,6 +1,7 @@
 from bapsflib import lapd
 import numpy as np
 import cupy as cp
+from cupyx.scipy import signal as csig
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.collections import PolyCollection
@@ -21,17 +22,18 @@ def main():
     clockRate = 1e8
     
     pos_tol = 1
-    startFrame = 5000
+    startFrame = 13000
     duration = 500
+    
+    #Folder Directory for Data    
+    file_path = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run65_Bdot_p35x_blockinglimiters_0degreestilt_12kV_3rdplane.hdf5'
+
     
     
     ############################
     #   IMPORT/LOAD THE DATA   #
     ############################
-
-    #Folder Directory
-    file_path = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run28_iisat_p31_blockinglimiters_12kV.hdf5'
-
+    
     #bapsflib to read file
     hdf5_file = lapd.File(file_path)   
 
@@ -44,21 +46,24 @@ def main():
     #print(intfer_data[])
     
     
-    board = 1
+    board = 2
     channel = 1
 
     data = hdf5_file.read_data(board, channel, add_controls=[('6K Compumotor', 1)])
     
     print(data.dtype)
     shot_data = cp.asarray(data['signal'])
-    pos_data = data['xyz']
+    #pos_data = data['xyz']
     
-    shotsPerPos, shotsSet = bap.getShotsPerLocation(pos_data, pos_tol)
-
+    #shotsPerPos, shotsSet = bap.getShotsPerLocation(pos_data, pos_tol)
+    
     #print(f"Shots per position: {shotsPerPos}, Number of positions: {len(shotsSet)} \n")
-    print(shotsSet) #(-20, 15) -> (-6,-15)
-    bap.savePlot(shot_data, startFrame, duration, 0)
-
+    #print(shotsSet) #(-20, 15) -> (-6,-15)
+    shot_data = fft.butter_bandpass(shot_data, 4e6, 5.5e6, clockRate, 4)
+    bap.savePlot(shot_data, startFrame, duration, 0, f"Butterworth_Filter/isat_Board{board}_Ch{channel}", board, channel)
+    
+    
+    
     #Converts ['signal'] to [x,y,shotNum,frame(time)]
     #data = bap.reshapeData(shot_data)
 
@@ -94,8 +99,8 @@ def main():
     #   FIND FFT   #
     ################
     
-    
-    '''         #3d plot
+    '''
+            #3d plot of FFT
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     
@@ -105,8 +110,7 @@ def main():
     x = np.fft.fftfreq(n, d = 1/clockRate)
     
     for i in range(700):
-        xind = bap.indexToCoords(i, 20)[0]
-        yind = bap.indexToCoords(i, 20)[1]
+        xind, yind = bap.indexToCoords(i, 20)
         y = fft.getDigitizerData(shot_data, xind, yind, startFrame, duration, 0)
         y = abs(fft.getFFT(y).get())
         ax.plot(x, y, i)

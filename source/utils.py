@@ -3,18 +3,14 @@ import numpy as np #Standard python package for mathy stuff (everything from cre
 import matplotlib.pyplot as plt #Python package for plotting stuff
 from matplotlib.animation import FuncAnimation
 import cupy as cp
+from cupyx.scipy import signal as csig
 from sortedcollections import OrderedSet
 from pathlib import Path
-
-
-#GLOBAL VARIABLES
-
-board = 1
-
-channel = 1
+import FFT as fft
+import scipy as sp
 
 #'signal': [shot number, time]
-def getFrame(i, shot_data, shotNum):
+def getFrameArr(i, shot_data, shotNum):
     """Helper function to generate values for the ith frame for animFrame(i, shot_data):
 
     Args:
@@ -25,33 +21,32 @@ def getFrame(i, shot_data, shotNum):
         (2,2) array: digitizer values for each coordinate
     """
     idx = shotNum
-    data_plot = np.zeros((16,14))
-    for y in range(0, 14, 1): #iterate thru y coords
-        for x in range(0,16,1): #iterate thru x coords
-            data_plot[x,y] = shot_data[idx,i] #Set data_plot[x,y] to appropriate value
-            idx+=10 #Increment idx by 10
-    return data_plot
+    shot_data = reshapeData(shot_data)
+    return shot_data[:, :, shotNum, i]
 
-def animFrame(i, shot_data, shotNum):
+def animFrame(i, shot_data, shotNum, board, channel):
     """Helper function to generate the ith frame for savePlot(shot_data, startFrame, duration):
 
     Args:
+        board (int): Board number
+        channel (int): Channel number
         i (int): ith frame requested
         shot_data (array): 'signal' column of DF
         shotNum (int): shot number
     """
-    data_plot = getFrame(i, shot_data, shotNum)
-    plt.imshow(cp.transpose(data_plot, (1, 0)))
+    data_plot = getFrameArr(i, shot_data, shotNum)
+    plt.imshow(cp.transpose(data_plot, (1, 0)).get())
     plt.title('run28, isat, Board ' + str(board) + ', Ch ' + str(channel)+ ', Frame = ' + str(i))
     #Uncomment if needed:
     #plt.subplots_adjust(left = 1, right = 0.2)                     
 
-fileName = f"isat_Board{board}_Ch{channel}"
 
-def savePlot(shot_data, startFrame, duration, shotNum):
+def savePlot(shot_data, startFrame, duration, shotNum, name, board, channel):
     """Generates a .gif of data animation
 
     Args:
+        board (int): Board number
+        channel (int): Channel number
         shot_data (array): 'signal' column of DF
         startFrame (int): starting frame
         duration (int): total number of frames requested
@@ -59,11 +54,11 @@ def savePlot(shot_data, startFrame, duration, shotNum):
     fig = plt.figure()
     plt.xlabel('x (cm)')
     plt.ylabel('y (cm)')
-    animFrame(startFrame, shot_data, shotNum)
+    animFrame(startFrame, shot_data, shotNum, board, channel)
     plt.colorbar()
     animation = FuncAnimation(fig = fig, func = animFrame, frames = np.arange(startFrame, startFrame+duration, 1), fargs = (shot_data, shotNum,), interval = 1000)
-    directory = f"C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/figures/{fileName}"
-    filename = f"{fileName}_F{startFrame}.gif"
+    directory = f"C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/figures/{name}/"
+    filename = f"{name}_F{startFrame}.gif"
     Path(directory).mkdir(parents=True, exist_ok=True)
     animation.save(directory + filename, dpi = 150, fps = 300, writer = 'ffmpeg')
 
@@ -108,7 +103,7 @@ def reshapeData(shot_data):
     """
     #First reshape such that we index by (y,x,shotNum,time)
     #Then transpose such that it becomes (x,y,shotNum,time)
-    return cp.transpose(cp.reshape(shot_data, (16,14,10,-1)), (1,0,2,3))
+    return cp.transpose(cp.reshape(shot_data, (35,20,10,-1)), (1,0,2,3))
 
 def coordsToIndex(x, y, width):
     """Converts x, y coordinates to indexed (Increasing in left->right, down->up) coordinates 

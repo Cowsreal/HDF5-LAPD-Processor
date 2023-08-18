@@ -2,6 +2,7 @@
 from bapsflib import lapd
 import numpy as np
 import cupy as cp
+import cupyx as cpx
 import matplotlib.pyplot as plt 
 from matplotlib.animation import FuncAnimation
 import utils as bap
@@ -45,3 +46,8 @@ def sumFFTPeak(shot_data, x, y, startFrame, duration, totalShots):
     sum =  cp.sum(sumArr)
     return sum
 
+def butter_bandpass(shot_data, lowCut, highCut, fs, order):
+    a, b = cpx.scipy.signal.butter(order, (lowCut, highCut), 'bandpass', fs)
+    return cpx.scipy.signal.filtfilt(b, a, shot_data[:,:], axis=1)
+    
+    
