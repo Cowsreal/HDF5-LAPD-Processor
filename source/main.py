@@ -52,11 +52,14 @@ def main():
     
     print(data.dtype)
     shot_data = cp.asarray(data['signal'])
-    #pos_data = data['xyz']
+    pos_data = data['xyz']
+    print(pos_data.dtype)
+    print(pos_data)
+    print(f"xlen: {len(pos_data[:,0])}, ylen: {len(pos_data[:,1])}")
     
-    #shotsPerPos, shotsSet = bap.getShotsPerLocation(pos_data, pos_tol)
+    shotsPerPos, shotsSet = bap.getShotsPerLocation(pos_data, pos_tol)
     
-    #print(f"Shots per position: {shotsPerPos}, Number of positions: {len(shotsSet)} \n")
+    print(f"Shots per position: {shotsPerPos}, Number of positions: {len(shotsSet)} \n")
     #print(shotsSet) #(-20, 15) -> (-6,-15)
     dims = (35,20,10,-1)
     shot_data = fft.butter_bandpass(shot_data, 3e6, 6e6, clockRate, 5, dims = (35,20,10,-1))
