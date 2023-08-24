@@ -2,14 +2,9 @@ from bapsflib import lapd
 import numpy as np
 import cupy as cp
 from cupyx.scipy import signal as csig
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from matplotlib.collections import PolyCollection
 import FFT as fft
 from sortedcollections import OrderedSet
 import utils as bap
-import pandas as pd
-import sys
 
 class file:
     def __init__(self, dir, shotNum = 0):
@@ -22,6 +17,14 @@ class file:
         self.dir = dir
         self.shotNum = shotNum
         self.hdf5_file = lapd.File(dir)
+        
+    def setTol(self, tol):
+        """Sets the decimal tolerance for rounding off coordinate values
+
+        Args:
+            tol (int): Number of places after decimal to round
+        """
+        self.tol = tol
         
     def printOverview(self):
         """Prints overview of current .hdf5 file
@@ -65,7 +68,7 @@ class file:
             coordsList: set of all distinct coordinates at which the probe makes stops at
         """
         self.coordsList = OrderedSet(set()) 
-        temp = cp.copy(cp.around(self.pos_data, decimals = tol))
+        temp = cp.copy(cp.around(self.pos_data, decimals = tol)).get()
         x = len(temp[:,0])
         y = len(temp[:,1])
         for i in range(0, x, 1):
@@ -73,7 +76,7 @@ class file:
                 self.coordsList.add((temp[i,0], temp[j,1]))
         return self.coordsList
 
-    def getShotsPerLocation(self, tol):
+    def getShotsPerLocation(self):
         """Returns the number of shots per location as well as output of getCoords
 
         Args:
@@ -84,8 +87,8 @@ class file:
             (int) : number of shots taken per location
         """
         if not hasattr(self, 'coordsList'):
-            self.getCoords(self.pos_data,tol)
-        return len(self.pos_data)/len(self.coordsList)
+            self.getCoords(self.tol)
+        return len(self.pos_data)//len(self.coordsList)
     
     def setxSize(self, xSize):
         """Sets the xSize of current data
@@ -157,4 +160,17 @@ class file:
             indexToCoords(i, width)[0] (int) : x coordinate
             indexToCoords(i, width)[1] (int) : y coordinate
         """
-        return i%width*self.dx, int(i/width)*self.dy
+        return i%width*self.dx, (i//width)*self.dy
+    
+    def reshapeData(self):
+        """Transforms queue based 'signal' data in order to index with (x, y, shotNum, frame)
+
+        Args:
+            shot_data (array): 'signal' column of DF
+
+        Returns:
+            array : reshaped data
+        """
+        #First reshape such that we index by (y,x,shotNum,time)
+        #Then transpose such that it becomes (x,y,shotNum,time)
+        return cp.transpose(cp.reshape(self.shot_data, (self.getySize(), self.getxSize(), self.getShotsPerLocation(), -1)), (1,0,2,3))

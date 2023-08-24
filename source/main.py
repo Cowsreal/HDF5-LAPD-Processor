@@ -9,9 +9,11 @@ import FFT as fft
 import utils as bap
 import pandas as pd
 import sys
+import file
 
 plt.style.use('ggplot')
 
+"""
 def main():
     ########################
     #   GLOBAL VARIABLES   #
@@ -158,6 +160,37 @@ def main():
     #Langmuir Sweep, run16_sweeps_p31, how we get temperature profile
     
     #Look at run28_isat_p31_blocklimiters_12kV
+"""
+
+
+def main():
+    ########################
+    #   GLOBAL VARIABLES   #
+    ########################
     
+    totalShots = 3360
+    shotsPerPos = 10
+    clockRate = 1e8
+    
+    pos_tol = 1
+    startFrame = 5000
+    duration = 250
+    
+    board = 2
+    channel = 2
+    #Folder Directory for Data    
+    file_path1 = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run65_Bdot_p35x_blockinglimiters_0degreestilt_12kV_3rdplane.hdf5'
+    
+    ############################
+    #   IMPORT/LOAD THE DATA   #
+    ############################
+    
+    file1 = file.file(file_path1, 0)
+    file1.readFile(board, channel)
+    file1.setySize(35)
+    file1.setxSize(20)
+    file1.setTol(pos_tol)
+    hi = file1.reshapeData()
+
 if __name__ == "__main__":
     main()
