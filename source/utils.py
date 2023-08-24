@@ -3,14 +3,13 @@ import numpy as np #Standard python package for mathy stuff (everything from cre
 import matplotlib.pyplot as plt #Python package for plotting stuff
 from matplotlib.animation import FuncAnimation
 import cupy as cp
-from cupyx.scipy import signal as csig
 from sortedcollections import OrderedSet
 from pathlib import Path
 import FFT as fft
 import scipy as sp
 
 #'signal': [shot number, time]
-def getFrameArr(i, shot_data, shotNum):
+def getFrameArr(i, shot_data, shotNum, dims):
     """Helper function to generate values for the ith frame for animFrame(i, shot_data):
 
     Args:
@@ -21,10 +20,10 @@ def getFrameArr(i, shot_data, shotNum):
         (2,2) array: digitizer values for each coordinate
     """
     idx = shotNum
-    shot_data = reshapeData(shot_data)
+    shot_data = reshapeData(shot_data, dims)
     return shot_data[:, :, shotNum, i]
 
-def animFrame(i, shot_data, shotNum, board, channel):
+def animFrame(i, shot_data, shotNum, board, channel, dims):
     """Helper function to generate the ith frame for savePlot(shot_data, startFrame, duration):
 
     Args:
@@ -34,14 +33,14 @@ def animFrame(i, shot_data, shotNum, board, channel):
         shot_data (array): 'signal' column of DF
         shotNum (int): shot number
     """
-    data_plot = getFrameArr(i, shot_data, shotNum)
+    data_plot = getFrameArr(i, shot_data, shotNum, dims)
     plt.imshow(cp.transpose(data_plot, (1, 0)).get())
-    plt.title('run28, isat, Board ' + str(board) + ', Ch ' + str(channel)+ ', Frame = ' + str(i))
+    plt.title('run65, 3rd Plane, Board ' + str(board) + ', Ch ' + str(channel)+ ', Frame = ' + str(i))
     #Uncomment if needed:
     #plt.subplots_adjust(left = 1, right = 0.2)                     
 
 
-def savePlot(shot_data, startFrame, duration, shotNum, name, board, channel):
+def savePlot(shot_data, startFrame, duration, shotNum, name, subDir, board, channel, dims):
     """Generates a .gif of data animation
 
     Args:
@@ -54,13 +53,13 @@ def savePlot(shot_data, startFrame, duration, shotNum, name, board, channel):
     fig = plt.figure()
     plt.xlabel('x (cm)')
     plt.ylabel('y (cm)')
-    animFrame(startFrame, shot_data, shotNum, board, channel)
+    animFrame(startFrame, shot_data, shotNum, board, channel, dims)
     plt.colorbar()
-    animation = FuncAnimation(fig = fig, func = animFrame, frames = np.arange(startFrame, startFrame+duration, 1), fargs = (shot_data, shotNum,), interval = 1000)
-    directory = f"C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/figures/{name}/"
+    animation = FuncAnimation(fig = fig, func = animFrame, frames = np.arange(startFrame, startFrame+duration, 1), fargs = (shot_data, shotNum, board, channel, dims,), interval = 1000)
+    directory = f"C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/figures/{subDir}{name}/"
     filename = f"{name}_F{startFrame}.gif"
     Path(directory).mkdir(parents=True, exist_ok=True)
-    animation.save(directory + filename, dpi = 150, fps = 300, writer = 'ffmpeg')
+    animation.save(directory + filename, dpi = 150, fps = 300, writer = 'Pillow')
 
 def getCoords(pos_data, tol):
     """
@@ -92,7 +91,7 @@ def getShotsPerLocation(pos_data, tol):
     tracker = getCoords(pos_data,tol)
     return len(pos_data[:,0])/len(tracker), tracker
 
-def reshapeData(shot_data):
+def reshapeData(shot_data, dims):
     """Transforms queue based 'signal' data in order to index with (x, y, shotNum, frame)
 
     Args:
@@ -103,7 +102,7 @@ def reshapeData(shot_data):
     """
     #First reshape such that we index by (y,x,shotNum,time)
     #Then transpose such that it becomes (x,y,shotNum,time)
-    return cp.transpose(cp.reshape(shot_data, (35,20,10,-1)), (1,0,2,3))
+    return cp.transpose(cp.reshape(shot_data, dims), (1,0,2,3))
 
 def coordsToIndex(x, y, width):
     """Converts x, y coordinates to indexed (Increasing in left->right, down->up) coordinates 
