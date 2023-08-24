@@ -27,7 +27,6 @@ def main():
     
     #Folder Directory for Data    
     file_path = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run65_Bdot_p35x_blockinglimiters_0degreestilt_12kV_3rdplane.hdf5'
-
     
     
     ############################

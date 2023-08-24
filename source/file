@@ -1,0 +1,78 @@
+from bapsflib import lapd
+import numpy as np
+import cupy as cp
+from cupyx.scipy import signal as csig
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from matplotlib.collections import PolyCollection
+import FFT as fft
+from sortedcollections import OrderedSet
+import utils as bap
+import pandas as pd
+import sys
+
+class file:
+    def __init__(self, dir, shotNum = 0):
+        """Constructor for file class
+
+        Args:
+            shotNum (int): shotNum to be inspected
+            dir (str): File path on disk
+        """
+        self.dir = dir
+        self.shotNum = shotNum
+        self.hdf5_file = lapd.File(dir)
+        
+    def readFile(self, board, channel):
+        self.data_main = self.hdf5_file.read_data(board, channel, add_controls=[('6K Compumotor', 1)])
+        self.pos_data = cp.asarray(self.data_main['xyz'])
+        self.shot_data = cp.asarray(self.data_main['signal'])
+    
+    def set_shotNum(self, shotNum):
+        """Sets the shotNum
+
+        Args:
+            shotNum (int): New shotNum to be changed to
+        """
+        self.shotNum = shotNum
+    
+    def get_shotNum(self):
+        """Returns the shotNum
+
+        Returns:
+            (int): returns the currently set shotNum
+        """
+        return self.shotNum
+    
+    def getCoords(self, tol):
+        """Sets attribute .coordsList to an ordered set of all coordinates the probe visits
+        Args:
+            pos_data (array): 'xyz' column of DF
+            tol (int): # of decimal places for same location tolerance
+
+        Returns:
+            coordsList: set of all distinct coordinates at which the probe makes stops at
+        """
+        self.coordsList = OrderedSet(set()) 
+        temp = c.copy(cp.around(self.pos_data, decimals = tol))
+        x = len(temp[:,0])
+        y = len(temp[:,1])
+        for i in range(0, x, 1):
+            for j in range(0, y, 1):
+                self.coordsList.add((temp[i,0], temp[j,1]))
+        return self.coordsList
+
+    def getShotsPerLocation(self, tol):
+        """Returns the number of shots per location as well as output of getCoords
+
+        Args:
+            pos_data (array): 'xyz' column of DF
+            tol (int): # of decimal places for same location tolerance
+
+        Returns:
+            getShotsPerLocation(pos_data, tol)[0] (int) : number of shots taken per location
+            getShotsPerLocation(pos_data, tol)[1] (set) : output of getCoords(pos_data, tol):
+        """
+        if not hasattr(self, 'coordsList'):
+            self.getCoords(self.pos_data,tol)
+        return len(self.pos_data[:,0])/len(self.coordsList)
