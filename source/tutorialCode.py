@@ -1,3 +1,9 @@
+#################################################################
+#                                                               #
+#   THIS IS BAPSFLIB TUTORIAL CODE GURLEEN BAL SHARED WITH ME   #
+#                                                               #
+#################################################################
+
 #Set to wherever your data file is located, this is from my folder
 #data_file = 'C:/Users/mzhan/Desktop/VS Python/bapsflibtest/data/run65_Bdot_p35x_blockinglimiters_0degreestilt_12kV_3rdplane.hdf5'
 
