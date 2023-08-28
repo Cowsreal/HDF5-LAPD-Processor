@@ -1,4 +1,3 @@
-
 from bapsflib import lapd
 import numpy as np
 import cupy as cp
@@ -54,5 +53,4 @@ def butter_bandpass(shot_data, lowCut, highCut, fs, order, dims):
     shot_data = shot_data[:,:,0,:]
     shot_data = cp.reshape(shot_data, (700, -1))
     return sp.signal.filtfilt(b, a, shot_data.get()[:,:], axis=1)
-    
     
