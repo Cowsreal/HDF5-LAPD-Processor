@@ -1,14 +1,11 @@
-from bapsflib import lapd
 import numpy as np
 import cupy as cp
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.collections import PolyCollection
-from cupyx.scipy import signal as csig
-import FFT as fft
-from sortedcollections import OrderedSet
-import utils as bap
 from pathlib import Path
+
+plt.style.use('ggplot')
 
 class plotter:
     def __init__(self, file, dir):

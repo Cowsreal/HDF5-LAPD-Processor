@@ -2,9 +2,8 @@ from bapsflib import lapd
 import numpy as np
 import cupy as cp
 from cupyx.scipy import signal as csig
-import FFT as fft
 from sortedcollections import OrderedSet
-import utils as bap
+import scipy as sp
 
 class file:
     def __init__(self, dir, shotNum = 0, board = 0, channel = 0):
@@ -166,7 +165,7 @@ class file:
         Returns:
             coordsList: set of all distinct coordinates at which the probe makes stops at
         """
-        temp = cp.copy(cp.around(self.pos_data, decimals = self.tol)).get()
+        temp = cp.copy(cp.around(self.pos_data, decimals = self.tol))
         self.coordsList = OrderedSet(set())
         self.maxX = -99999
         self.minX = 99999
@@ -243,3 +242,52 @@ class file:
         #First reshape such that we index by (y,x,shotNum,time)
         #Then transpose such that it becomes (x,y,shotNum,time)
         return cp.transpose(cp.reshape(self.shot_data, (self.getYSize(), self.getXSize(), self.getShotsPerLocation(), -1)), (1,0,2,3))
+    
+    #####################
+    #   FFT Functions   #
+    #####################
+    
+    def getDigitizerData(self, x, y, startFrame, duration):
+        """Generate array of digitizer data for a certain pixel at (x,y), shot_data must be 'signal' DF
+
+        Args:
+            shot_data (array): 'signal' column of DF
+            x (int): x coordinate
+            y (int): y coordinate
+            startFrame (int): requested starting frame
+            duration (int): duration of data in frames
+
+        Returns:
+            array : one dimensional digitizer data
+        """
+        
+        data = cp.zeros(shape = (duration+1,))
+        tempData = self.reshapeData()
+        for i in range(startFrame, startFrame+duration+1, 1):
+            data[i-startFrame] = tempData[x, y, self.getShotNum(), i]
+        return data
+    
+    def getFFT(data):
+        """Computes real valued FFT
+
+        Args:
+            data (array): one dimensional digitizer data
+
+        Returns:
+            array : real valued fft of input data
+        """
+        return cp.fft.rfft(data)
+    
+    def sumFFTPeak(self, x, y, startFrame, duration):
+        sumArr = cp.zeros(self.getShotsPerLocation())
+        for i in range(0, self.getShotsPerLocation()):
+            sumArr[i] = cp.max(cp.absolute(self.getDigitizerData(x, y, startFrame, duration, i)))
+        sum =  cp.sum(sumArr)
+        return sum
+
+    def butter_bandpass(self, lowCut, highCut, fs, order):
+        a, b = sp.signal.butter(N = order, Wn = (lowCut, highCut), btype = 'bandpass', fs = fs)
+        shot_data = self.reshapeData()
+        shot_data = shot_data[:,:,self.getShotNum(),:]
+        shot_data = cp.reshape(shot_data, (700, -1))
+        return sp.signal.filtfilt(b, a, shot_data.get()[:,:], axis=1)
