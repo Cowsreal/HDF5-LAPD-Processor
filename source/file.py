@@ -135,6 +135,8 @@ class file:
         """
         self.dy = dy
         
+    
+        
     #########################
     #   UTILITY FUNCTIONS   #
     #########################
@@ -155,8 +157,8 @@ class file:
         self.pos_data = cp.asarray(self.data_main['xyz'])
         self.shot_data = cp.asarray(self.data_main['signal'])
     
-    def getCoords(self, tol):
-        """Sets attribute .coordsList to an ordered set of all coordinates the probe visits
+    def getCoords(self):
+        """Sets attribute .coordsList to an ordered set of all coordinates the probe visits, also updates maxX, minX, maxY, minY
         Args:
             pos_data (array): 'xyz' column of DF
             tol (int): # of decimal places for same location tolerance
@@ -164,13 +166,29 @@ class file:
         Returns:
             coordsList: set of all distinct coordinates at which the probe makes stops at
         """
-        self.coordsList = OrderedSet(set()) 
-        temp = cp.copy(cp.around(self.pos_data, decimals = tol)).get()
+        temp = cp.copy(cp.around(self.pos_data, decimals = self.tol)).get()
+        self.coordsList = OrderedSet(set())
+        self.maxX = -99999
+        self.minX = 99999
+        self.maxY = -99999
+        self.minY = 99999
+        
+        def minMaxUpdater(i, j):
+            if temp[i,0] > self.maxX:
+                self.maxX = temp[i,0]
+            if temp[i,0] < self.minX:
+                self.minX = temp[i,0]
+            if temp[j,1] > self.maxY:
+                self.maxY = temp[j,1]
+            if temp[j,1] < self.minY:
+                self.minY = temp[j,1]
+
         x = len(temp[:,0])
         y = len(temp[:,1])
         for i in range(0, x, 1):
             for j in range(0, y, 1):
-                self.coordsList.add((temp[i,0], temp[j,1]))
+                minMaxUpdater(i, j)
+                self.coordsList.add((temp[i, 0], temp[j, 1]))
         return self.coordsList
 
     def getShotsPerLocation(self):

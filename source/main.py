@@ -41,9 +41,12 @@ def main():
     file1.setYSize(35)
     file1.setXSize(20)
     file1.setTol(pos_tol)
+    file1.getCoords()
+    print(f'minX: {file1.minX}, maxX: {file1.maxX}, minY: {file1.minY}, maxY: {file1.maxY}')
     
-    plotter1 = plotter.plotter(file1, "tester")
-    plotter1.savePlot(startFrame, duration, "test")
+    
+    #plotter1 = plotter.plotter(file1, "tester")
+    #plotter1.savePlot(startFrame, duration, "test")
     
 
 if __name__ == "__main__":
