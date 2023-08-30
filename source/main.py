@@ -17,9 +17,9 @@ def main():
     duration = 250
     
     board = 2
-    channel = 2
+    channel = 1
     #Folder Directory for Data    
-    file_path1 = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run65_Bdot_p35x_blockinglimiters_0degreestilt_12kV_3rdplane.hdf5'
+    file_path1 = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run28_iisat_p31_blockinglimiters_12kV.hdf5'
     
     ############################
     #   IMPORT/LOAD THE DATA   #
@@ -27,12 +27,11 @@ def main():
     
     file1 = file(file_path1, 0, board, channel)
     file1.readFile()
-    file1.setYSize(35)
-    file1.setXSize(20)
-    file1.setTol(pos_tol)
-    print("hi")
-    file1.getCoords()
-    print(f'minX: {file1.minX}, maxX: {file1.maxX}, minY: {file1.minY}, maxY: {file1.maxY}')
+    file1.printOverview()
+    #file1.setTol(pos_tol)
+    #print("hi")
+    #file1.getCoords()
+    #print(f'minX: {file1.minX}, maxX: {file1.maxX}, minY: {file1.minY}, maxY: {file1.maxY}')
 
     #plotter1 = plotter(file1, "tester")
     #plotter1.savePlot(startFrame, duration, "test")
