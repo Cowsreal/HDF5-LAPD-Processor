@@ -165,7 +165,7 @@ class file:
         Returns:
             coordsList: set of all distinct coordinates at which the probe makes stops at
         """
-        temp = cp.copy(cp.around(self.pos_data, decimals = self.tol))
+        temp = cp.copy(cp.around(self.pos_data, decimals = self.tol)).get()
         self.coordsList = OrderedSet(set())
         self.maxX = -99999
         self.minX = 99999
@@ -201,7 +201,7 @@ class file:
             (int) : number of shots taken per location
         """
         if not hasattr(self, 'coordsList'):
-            self.getCoords(self.tol)
+            self.getCoords()
         return len(self.pos_data)//len(self.coordsList)
         
     def coordsToIndex(self, x, y, width):

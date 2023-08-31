@@ -5,3 +5,4 @@ figures
 .env
 Activate.ps1 - Shortcut.lnk
 cupy/
+source/tester.ipynb
