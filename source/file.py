@@ -133,9 +133,7 @@ class file:
         """Sets the dy between each point scanned
         """
         self.dy = dy
-        
-    
-        
+
     #########################
     #   UTILITY FUNCTIONS   #
     #########################
@@ -230,7 +228,7 @@ class file:
         """
         return i%width*self.dx, (i//width)*self.dy
     
-    def reshapeData(self):
+    def reshapeData(self, data):
         """Transforms queue based 'signal' data in order to index with (x, y, shotNum, frame)
 
         Args:
@@ -241,8 +239,24 @@ class file:
         """
         #First reshape such that we index by (y,x,shotNum,time)
         #Then transpose such that it becomes (x,y,shotNum,time)
-        return cp.transpose(cp.reshape(self.shot_data, (self.getYSize(), self.getXSize(), self.getShotsPerLocation(), -1)), (1,0,2,3))
-    
+        if data is self.shot_data:
+            return cp.transpose(cp.reshape(data, (self.getYSize(), self.getXSize(), self.getShotsPerLocation(), -1)), (1,0,2,3))
+        else:
+            return cp.transpose(cp.reshape(data, (self.getYSize(), self.getXSize(), -1)), (1,0,2))
+
+    def getFrameArr(self, i):
+        """Helper function to generate values for the ith frame for animFrame(i, shot_data):
+
+        Args:
+            i (int): ith frame requested
+            shot_data (array): 'signal' column of DF
+
+        Returns:
+            (2,2) array: digitizer values for each coordinate
+        """
+        shot_data = self.reshapeData(self.shot_data)
+        return shot_data[:, :, self.getShotNum(), i] 
+
     #####################
     #   FFT Functions   #
     #####################
@@ -262,21 +276,22 @@ class file:
         """
         
         data = cp.zeros(shape = (duration+1,))
-        tempData = self.reshapeData()
+        tempData = self.reshapeData(self.shot_data)
         for i in range(startFrame, startFrame+duration+1, 1):
             data[i-startFrame] = tempData[x, y, self.getShotNum(), i]
         return data
     
-    def getFFT(data):
-        """Computes real valued FFT
+    def getFFT(self, data):
+        """Computes the FFT of the data
 
         Args:
-            data (array): one dimensional digitizer data
+            data (cp.ndarray): Data to be FFT'd
+            axis (int, optional): Axis along which to compute FFT. Defaults to 1.
 
         Returns:
-            array : real valued fft of input data
+            cp.ndarray : Real valued FFT of data
         """
-        return cp.fft.rfft(data)
+        return cp.fft.rfftn(data)
     
     def sumFFTPeak(self, x, y, startFrame, duration):
         sumArr = cp.zeros(self.getShotsPerLocation())
@@ -285,9 +300,20 @@ class file:
         sum =  cp.sum(sumArr)
         return sum
 
-    def butter_bandpass(self, lowCut, highCut, fs, order):
-        a, b = sp.signal.butter(N = order, Wn = (lowCut, highCut), btype = 'bandpass', fs = fs)
-        shot_data = self.reshapeData()
+    def butter_bandpass(self, lowCut, highCut, fs, order, btype):
+        """Computes butter band pass coefficients and applies them to file.shot_data and returns result
+
+        Args:
+            lowCut (_type_): _description_
+            highCut (_type_): _description_
+            fs (_type_): _description_
+            order (_type_): _description_
+            btype (_type_): _description_
+
+        Returns:
+            numpy.ndarray : Filtered Data
+        """
+        b, a = sp.signal.butter(N = order, Wn = (lowCut, highCut), btype = btype, fs = fs)
+        shot_data = self.reshapeData(self.shot_data)
         shot_data = shot_data[:,:,self.getShotNum(),:]
-        shot_data = cp.reshape(shot_data, (700, -1))
-        return sp.signal.filtfilt(b, a, shot_data.get()[:,:], axis=1)
+        return sp.signal.filtfilt(b, a, shot_data.get(), axis = -1)

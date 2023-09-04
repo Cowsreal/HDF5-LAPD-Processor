@@ -5,6 +5,7 @@ from plotter import plotter
 import matplotlib.pyplot as plt
 import numpy as np
 import cupy as cp
+import random
 
 def main():
     ########################
@@ -21,18 +22,34 @@ def main():
     
     board = 1
     channel = 1
-    #Folder Directory for Data    
-    file_path1 = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run28_iisat_p31_blockinglimiters_12kV.hdf5'
-    
+    #Folder Directory for Data
+    #run28_path = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run28_iisat_p31_blockinglimiters_12kV.hdf5'
+    run65_3_path = 'C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/data/run65_Bdot_p35x_blockinglimiters_0degreestilt_12kV_3rdplane.hdf5'
     ############################
     #   IMPORT/LOAD THE DATA   #
     ############################
     
-    file1 = file(file_path1, 0, board, channel)
-    file1.readFile()
-    file1.setXSize(21)
-    file1.setYSize(16)
+    #run28 = file(run28_path, 0, board, channel)
+    #run28.readFile()
+    #run28.setXSize(21)
+    #run28.setYSize(16)
     #print(f'minX: {file1.minX}, maxX: {file1.maxX}, minY: {file1.minY}, maxY: {file1.maxY}')
+    run65_3 = file(run65_3_path, 0, 2, 1)
+    run65_3.readFile()
+    
+    run65_3.setXSize(20)
+    run65_3.setYSize(35)
+    print("Calling Butter!")
+    res = cp.asarray(run65_3.butter_bandpass(3e6, 6e6, 1e8, 4, 'bandpass'))
+    print("Finished Butter!")
+    plotter65_3 = plotter(run65_3, 'Butterworth_Filter/3rdPlane_Board2_Ch1/')
+    plotter65_3.addData(res)
+    for i in range(0, 7000, 1000):
+        plotter65_3.saveAnimPlot2D(startFrame + i, duration, '3rdPlane_Board2_Ch1', 1)
+
+
+
+    '''
     temp = file1.reshapeData()
     arr = cp.zeros((temp.shape[0], temp.shape[3]))
     for i in range(10):
@@ -71,6 +88,8 @@ def main():
 
     #plotter1 = plotter(file1, "tester")
     #plotter1.savePlot(startFrame, duration, "test")
+    '''
+
 
 
 if __name__ == "__main__":
