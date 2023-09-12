@@ -5,7 +5,7 @@ from cupyx.scipy import signal as csig
 from sortedcollections import OrderedSet
 import scipy as sp
 
-class file:
+class File:
     def __init__(self, dir, shotNum = 0, board = 0, channel = 0):
         """Constructor for file class
 
@@ -113,6 +113,14 @@ class file:
         """Sets the ySize of current data
         """
         self.ySize = ySize
+
+    def setShotsPerPos(self, shotsPerPos):
+        """Sets the shotsPerPos of current data
+
+        Args:
+            shotsPerPos (int): The number of shots taken per location
+        """
+        self.shotsPerPos = shotsPerPos
         
     def getDx(self):
         """Gets the dx, distance between each coordinate pass in the x direction
@@ -189,6 +197,10 @@ class file:
         return self.coordsList
 
     def getShotsPerLocation(self):
+        return self.shotsPerPos
+
+    '''
+    def getShotsPerLocation(self):
         """Returns the number of shots per location as well as output of getCoords
 
         Args:
@@ -198,10 +210,14 @@ class file:
         Returns:
             (int) : number of shots taken per location
         """
-        if not hasattr(self, 'coordsList'):
+        if hasattr(self, 'shotsPerPos'):
+            print(f"returning {self.shotsPerPos}")
+            return self.shotsPerPos
+        else:
             self.getCoords()
-        return len(self.pos_data)//len(self.coordsList)
-        
+            return len(self.pos_data)//len(self.coordsList)
+    '''    
+
     def coordsToIndex(self, x, y, width):
         """Converts x, y coordinates to indexed (Increasing in left->right, down->up) coordinates 
 
@@ -228,7 +244,7 @@ class file:
         """
         return i%width*self.dx, (i//width)*self.dy
     
-    def reshapeData(self, data):
+    def reshapeData(self, data = None):
         """Transforms queue based 'signal' data in order to index with (x, y, shotNum, frame)
 
         Args:
@@ -237,6 +253,8 @@ class file:
         Returns:
             array : reshaped data
         """
+        if data is None:
+            data = self.shot_data
         #First reshape such that we index by (y,x,shotNum,time)
         #Then transpose such that it becomes (x,y,shotNum,time)
         if data is self.shot_data:
@@ -286,7 +304,6 @@ class file:
 
         Args:
             data (cp.ndarray): Data to be FFT'd
-            axis (int, optional): Axis along which to compute FFT. Defaults to 1.
 
         Returns:
             cp.ndarray : Real valued FFT of data

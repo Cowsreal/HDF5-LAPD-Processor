@@ -4,11 +4,20 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.collections import PolyCollection
 from pathlib import Path
+import os
 
 plt.style.use('ggplot')
 
-class plotter:
+class Plotter:
     def __init__(self, file, dir):
+        """Constructor for plotter class
+
+        Initializes self.dataArr to [(data, desc), (data, desc), ...] and sets self.dataArr[0] to (shot_data, self.file.shot_data), MUST BE RESHAPED
+
+        Args:
+            file (file): file object from which to plot
+            dir (str): save directory for figures
+        """
         self.file = file
         self.figDir = dir      #figDir is figure directory after .../figures/... 
         self.dataArr = []
@@ -22,7 +31,16 @@ class plotter:
             desc (str, optional): Description for added data. Defaults to 'Undefined'.
         """
         self.dataArr.append((self.file.reshapeData(data), desc))
-        
+    
+    def setData(self, idx, data, desc = 'Undefined'):
+        """Sets self.dataArr[0] to (data, desc)
+
+        Args:
+            data (cp.ndarray): Data to be set
+            desc (str, optional): Description of data, defaults to 'Undefined'.
+        """
+        self.dataArr[idx] = (self.file.reshapeData(data), desc)
+
     def printDataArr(self):
         for i, data in enumerate(self.dataArr):
             print(f'Index: {i}, Description: {data[1]} \n')
@@ -44,7 +62,8 @@ class plotter:
         animation = FuncAnimation(fig = fig, func = self.animFrame, fargs = (dataArridx, ), frames = np.arange(startFrame, startFrame+duration, 1), interval = 1000)
         directory = f"C:/Users/mzhan/Documents/GitHub/HDF5-LAPD-Processor/figures/{self.figDir}/"
         filename = f"{name}_F{startFrame}.gif"
-        Path(directory).mkdir(parents=True, exist_ok=True)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
         animation.save(directory + filename, dpi = 150, fps = 300, writer = 'Pillow')
         
     def animFrame(self, i, idx):
@@ -65,6 +84,8 @@ class plotter:
         #plt.subplots_adjust(left = 1, right = 0.2)
     
     def getFrameArr(self, i, idx = 0):
-        if not hasattr(self, 'temp'):
+        if idx == 0:
             self.temp1 = self.file.reshapeData(self.dataArr[idx][0])
+        if not hasattr(self, 'temp1'):
+            self.temp1 = self.dataArr[idx][0]
         return self.temp1[:, :, i]
